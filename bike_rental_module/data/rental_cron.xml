@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="ir_cron_rental_contract_states" model="ir.cron">
+        <field name="name">Mise à jour des contrats de location</field>
+
+        <!-- IMPORTANT : ce model_id DOIT exister -->
+        <field name="model_id" ref="model_rental_contract"/>
+
+        <field name="state">code</field>
+        <field name="code">model.cron_update_contract_states()</field>
+
+        <!-- Tous les 5 minutes (tu peux mettre 1 pour les tests) -->
+        <field name="interval_type">minutes</field>
+        <field name="interval_number">1</field>
+
+        <!-- Active -->
+        <field name="active">True</field>
+    </record>
+
+</odoo>

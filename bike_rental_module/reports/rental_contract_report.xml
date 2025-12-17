@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template PDF -->
+    <template id="rental_contract_template">
+        <t t-call="web.external_layout">
+            <t t-foreach="docs" t-as="doc">
+                <div class="page">
+                    <main>
+                        <style>
+                            .contract-header {
+                                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                                color: white;
+                                padding: 30px;
+                                border-radius: 10px;
+                                margin-bottom: 30px;
+                                text-align: center;
+                            }
+                            .contract-header h1 {
+                                margin: 0;
+                                font-size: 32px;
+                                font-weight: bold;
+                            }
+                            .info-box {
+                                border: 2px solid #667eea;
+                                border-radius: 8px;
+                                padding: 20px;
+                                margin-bottom: 20px;
+                                background-color: #f8f9ff;
+                            }
+                            .info-row {
+                                display: flex;
+                                padding: 10px 0;
+                                border-bottom: 1px solid #e0e0e0;
+                            }
+                            .info-row:last-child {
+                                border-bottom: none;
+                            }
+                            .info-label {
+                                font-weight: bold;
+                                color: #667eea;
+                                width: 40%;
+                            }
+                            .info-value {
+                                width: 60%;
+                                color: #333;
+                            }
+                            .price-summary {
+                                background-color: #f0f4ff;
+                                border: 2px solid #667eea;
+                                border-radius: 8px;
+                                padding: 20px;
+                                margin-top: 30px;
+                            }
+                            .price-row {
+                                display: flex;
+                                justify-content: space-between;
+                                padding: 10px 0;
+                                font-size: 16px;
+                            }
+                            .late-warning {
+                                background-color: #fff3cd;
+                                border: 2px solid #ff9800;
+                                border-radius: 8px;
+                                padding: 15px;
+                                margin: 20px 0;
+                                color: #856404;
+                            }
+                            .late-warning strong {
+                                color: #d32f2f;
+                            }
+                            .total-line {
+                                border-top: 3px solid #667eea;
+                                padding-top: 15px;
+                                margin-top: 15px;
+                                font-size: 24px;
+                                font-weight: bold;
+                                color: #667eea;
+                            }
+                            .section-title {
+                                color: #667eea;
+                                font-size: 20px;
+                                font-weight: bold;
+                                margin: 25px 0 15px 0;
+                                padding-bottom: 10px;
+                                border-bottom: 2px solid #667eea;
+                            }
+                        </style>
+
+                        <!-- En-tête du contrat -->
+                        <div class="contract-header">
+                            <h1>🚴 CONTRAT DE LOCATION DE VÉLO</h1>
+                            <p style="margin: 10px 0 0 0; font-size: 18px;">Référence: <span t-field="doc.name"/></p>
+                        </div>
+
+                        <!-- Informations client et vélo -->
+                        <div class="section-title">📋 Informations du contrat</div>
+                        <div class="info-box">
+                            <div class="info-row">
+                                <div class="info-label">👤 Client:</div>
+                                <div class="info-value"><span t-field="doc.customer_id.name"/></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">🚲 Vélo:</div>
+                                <div class="info-value"><span t-field="doc.bike_id.name"/></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">📅 Date de début:</div>
+                                <div class="info-value"><span t-field="doc.start_date" t-options='{"widget": "datetime"}'/></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">📅 Date de fin prévue:</div>
+                                <div class="info-value"><span t-field="doc.end_date" t-options='{"widget": "datetime"}'/></div>
+                            </div>
+                            <div class="info-row">
+                                <div class="info-label">⏱️ Durée:</div>
+                                <div class="info-value">
+                                    <t t-esc="'%.2f' % doc.duration_days"/> jours (<t t-esc="'%.2f' % doc.duration_hours"/> heures)
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Alerte retard si applicable -->
+                        <t t-if="doc.is_late">
+                            <div class="late-warning">
+                                <strong>⚠️ ATTENTION - RETARD CONSTATÉ</strong><br/>
+                                Le vélo a été rendu avec <strong><t t-esc="'%.2f' % doc.late_hours"/> heures de retard</strong>.<br/>
+                                Des pénalités s'appliquent conformément aux conditions générales.
+                            </div>
+                        </t>
+
+                        <!-- Récapitulatif des prix -->
+                        <div class="section-title">💰 Récapitulatif financier</div>
+                        <div class="price-summary">
+                            <div class="price-row">
+                                <span>Prix de location (<t t-if="doc.billing_unit == 'hour'">par heure</t><t t-else="">par jour</t>):</span>
+                                <span><t t-esc="'%.2f' % doc.price"/> €</span>
+                            </div>
+                            
+                            <t t-if="doc.is_late">
+                                <div class="price-row" style="color: #d32f2f;">
+                                    <span>⚠️ Pénalités de retard (<t t-esc="'%.2f' % doc.late_hours"/> h):</span>
+                                    <span><t t-esc="'%.2f' % doc.late_penalty"/> €</span>
+                                </div>
+                            </t>
+
+                            <div class="price-row total-line">
+                                <span>TOTAL À PAYER:</span>
+                                <span><t t-esc="'%.2f' % doc.total_amount"/> €</span>
+                            </div>
+                        </div>
+
+                        <!-- Notes si présentes -->
+                        <t t-if="doc.notes">
+                            <div class="section-title">📝 Notes</div>
+                            <div class="info-box">
+                                <span t-field="doc.notes"/>
+                            </div>
+                        </t>
+
+                        <!-- Signature -->
+                        <div style="margin-top: 50px; text-align: center; color: #999; font-size: 12px;">
+                            <p>Document généré automatiquement - Merci de votre confiance</p>
+                        </div>
+                    </main>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- Déclaration du rapport -->
+    <record id="rental_contract_report" model="ir.actions.report">
+        <field name="name">Contrat de location</field>
+        <field name="model">rental.contract</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">bike_rental_module.rental_contract_template</field>
+        <field name="report_file">bike_rental_module.rental_contract_template</field>
+        <field name="binding_model_id" ref="model_rental_contract"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

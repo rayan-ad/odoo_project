@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue Graph -->
+    <record id="view_rental_report_graph" model="ir.ui.view">
+        <field name="name">rental.report.graph</field>
+        <field name="model">rental.report</field>
+        <field name="arch" type="xml">
+            <graph string="Statistiques de location" type="bar">
+                <field name="month" type="row"/>
+                <field name="total_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Vue Pivot -->
+    <record id="view_rental_report_pivot" model="ir.ui.view">
+        <field name="name">rental.report.pivot</field>
+        <field name="model">rental.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Analyse des locations">
+                <field name="bike_id" type="row"/>
+                <field name="total_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Vue Liste -->
+    <record id="view_rental_report_list" model="ir.ui.view">
+        <field name="name">rental.report.list</field>
+        <field name="model">rental.report</field>
+        <field name="arch" type="xml">
+            <list string="Rapports de location">
+                <field name="start_date"/>
+                <field name="bike_id"/>
+                <field name="customer_id"/>
+                <field name="price"/>
+                <field name="total_amount"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_rental_report" model="ir.actions.act_window">
+        <field name="name">Rapports de location</field>
+        <field name="res_model">rental.report</field>
+        <field name="view_mode">graph,pivot,list</field>
+    </record>
+
+    <!-- Menus -->
+    <menuitem id="menu_rental_reporting"
+              name="Reporting"
+              parent="menu_rental_root"
+              sequence="50"/>
+
+    <menuitem id="menu_rental_report_analysis"
+              name="Analyse des locations"
+              parent="menu_rental_reporting"
+              action="action_rental_report"
+              sequence="10"/>
+</odoo>

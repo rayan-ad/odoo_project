@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Vue Liste - Taux d'occupation -->
+    <record id="view_bike_occupation_list" model="ir.ui.view">
+        <field name="name">bike.occupation.list</field>
+        <field name="model">bike.occupation.report</field>
+        <field name="arch" type="xml">
+            <list string="Taux d'occupation des vélos" default_order="occupation_rate desc">
+                <field name="bike_id"/>
+                <field name="number_of_rentals" sum="Total locations"/>
+                <field name="total_days_rented" sum="Total jours" widget="float" digits="[16,1]"/>
+                <field name="period_days"/>
+                <field name="occupation_rate" decoration-success="occupation_rate &gt;= 70" decoration-warning="occupation_rate &gt;= 40 and occupation_rate &lt; 70" decoration-danger="occupation_rate &lt; 40" string="Taux d'occupation (%)"/>                <field name="total_revenue" sum="Total revenus"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Vue Graph - Taux d'occupation -->
+    <record id="view_bike_occupation_graph" model="ir.ui.view">
+        <field name="name">bike.occupation.graph</field>
+        <field name="model">bike.occupation.report</field>
+        <field name="arch" type="xml">
+            <graph string="Taux d'occupation par vélo" type="bar">
+                <field name="bike_id" type="row"/>
+                <field name="occupation_rate" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Vue Pivot - Taux d'occupation -->
+    <record id="view_bike_occupation_pivot" model="ir.ui.view">
+        <field name="name">bike.occupation.pivot</field>
+        <field name="model">bike.occupation.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Analyse d'occupation">
+                <field name="bike_id" type="row"/>
+                <field name="occupation_rate" type="measure"/>
+                <field name="total_revenue" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_bike_occupation" model="ir.actions.act_window">
+        <field name="name">Taux d'occupation des vélos</field>
+        <field name="res_model">bike.occupation.report</field>
+        <field name="view_mode">list,graph,pivot</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_bike_occupation"
+              name="Taux d'occupation"
+              parent="menu_rental_reporting"
+              action="action_bike_occupation"
+              sequence="20"/>
+</odoo>
