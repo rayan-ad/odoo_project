@@ -5,13 +5,14 @@ class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
     rental_available = fields.Boolean(
-        string="Disponible en location"
+        string="Disponible en location",
+        default=False,
     )
 
     rental_price_hour = fields.Float(
-        string="Prix location / heure"
+        string="Prix location / heure",
     )
 
     rental_price_day = fields.Float(
-        string="Prix location / jour"
+        string="Prix location / jour",
     )

@@ -2,7 +2,7 @@
     'name': 'Bike Rental Module',
     'version': '1.0',
     'summary': 'Module pour la gestion de location des vélos',
-    'depends': ['base', 'product', 'contacts', 'sale'],
+    'depends': ['base', 'product', 'contacts', 'sale','website'],
     'data': [
         'security/ir.model.access.csv',
         'views/product_views.xml',
