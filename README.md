@@ -16,6 +16,49 @@ Le client souhaite une solution complète pour gérer son activité de vente et 
 
 ## Fonctionnalités principales
 
+Le projet est divisé en trois modules principaux, développés en équipe de 3 personnes :
+
+1. **Vente (Sale)** - Gestion des commandes et vente de vélos/accessoires
+2. **Location (Rental)** - Gestion des contrats de location
+3. **E-commerce (Website)** - Site web pour vente en ligne
+
+---
+
+### Module de Vente (Sale)
+
+Gestion complète de la vente de vélos et d'accessoires :
+
+#### Catalogue produits
+- Vélos (différents modèles : VTT, route, ville, électrique)
+- Pièces détachées (roues, freins, chaînes, etc.)
+- Accessoires (casques, antivols, éclairages, pompes)
+- Organisation par catégories
+- Photos et descriptions détaillées
+- Gestion des prix et promotions
+
+#### Gestion des commandes
+- Création de devis clients
+- Transformation devis en commande
+- Suivi de l'état des commandes (brouillon, confirmé, livré)
+- Historique des commandes par client
+- Gestion des retours et annulations
+
+#### Facturation
+- Génération automatique de factures
+- Factures clients natives Odoo (account.move)
+- Gestion des paiements
+- Suivi des factures impayées
+- Rapports de ventes
+
+#### Gestion des stocks
+- Suivi des entrées/sorties de stock
+- Inventaire des produits
+- Alertes stock faible
+- Réapprovisionnement
+- Traçabilité des mouvements
+
+---
+
 ### Module de Location (bike_rental_module)
 
 #### Gestion des contrats de location
@@ -50,15 +93,59 @@ Le client souhaite une solution complète pour gérer son activité de vente et 
 - Lien bidirectionnel entre contrat et facture
 - Protection contre la double facturation
 
-### Module de Vente
-- Gestion du catalogue produits (vélos, pièces, accessoires)
-- Commandes clients
-- Facturation
-- Gestion des stocks
+---
 
-### Module Website
-- Interface web pour les clients
-- Consultation du catalogue en ligne
+### Module E-commerce / Website
+
+Interface web publique pour la vente en ligne de vélos et accessoires :
+
+#### Site vitrine et catalogue en ligne
+- Page d'accueil attractive présentant le magasin
+- Catalogue complet des vélos et accessoires disponibles
+- Fiches produits détaillées avec :
+  - Photos haute qualité
+  - Descriptions techniques
+  - Prix et disponibilité en stock
+  - Caractéristiques (taille, couleur, poids, etc.)
+- Système de recherche et filtres
+- Navigation par catégories (VTT, Route, Ville, Électrique, Accessoires)
+
+#### Parcours client e-commerce
+- Ajout au panier
+- Panier d'achat dynamique
+- Tunnel de commande :
+  1. Identification/création de compte client
+  2. Choix de l'adresse de livraison
+  3. Sélection du mode de livraison
+  4. Choix du mode de paiement
+  5. Confirmation de commande
+- Suivi de commande en ligne
+- Historique des achats pour les clients connectés
+
+#### Gestion des comptes clients
+- Inscription et connexion
+- Espace client personnel
+- Modification des informations (adresse, téléphone, email)
+- Consultation de l'historique des commandes
+- Consultation de l'historique des locations
+
+#### Intégration avec les autres modules
+- Synchronisation automatique du catalogue avec le module Sale
+- Stock en temps réel affiché sur le site
+- Création automatique de commandes de vente depuis le site
+- Gestion des clients unifiée (res.partner)
+- Factures accessibles depuis l'espace client
+
+#### Pages informatives
+- Page "À propos" du magasin
+- Page "Contact" avec formulaire
+- Page "Conditions générales de vente"
+- Page "Politique de retour"
+- FAQ (Foire aux questions)
+
+#### Responsive design
+- Interface adaptée pour ordinateur, tablette et mobile
+- Navigation optimisée pour tous les écrans
 
 ## Prérequis
 
@@ -325,6 +412,27 @@ Aller dans : Apps > Mettre à jour la liste des applications > Rechercher "Bike 
 2. Créer des fiches clients
 
 ## Utilisation
+
+### Accéder au site e-commerce
+
+1. Ouvrir un navigateur et aller sur : **http://localhost:8069**
+2. Cliquer sur "Website" dans le menu ou aller directement sur la page d'accueil
+3. Parcourir le catalogue de vélos et accessoires
+4. Ajouter des produits au panier
+5. Passer commande (inscription/connexion requise)
+
+**URL directe du site :** http://localhost:8069/shop
+
+### Créer une vente (backend)
+
+1. Se connecter à Odoo : http://localhost:8069
+2. Aller dans **Ventes** > **Commandes** > **Devis**
+3. Cliquer sur "Créer"
+4. Sélectionner un client
+5. Ajouter des lignes de produits (vélos, accessoires)
+6. Confirmer la commande
+7. Créer la facture
+8. Enregistrer le paiement
 
 ### Créer un contrat de location
 
@@ -664,8 +772,26 @@ Ce projet est un projet académique. Pour toute question ou suggestion :
 
 ## Auteurs
 
-- Projet réalisé dans le cadre du cours Odoo 2025
-- Groupe : Abdillahi Darar Rayan , Barbu Eric-Dan , AL bakali Roudaina
+Projet réalisé dans le cadre du cours Odoo 2025
+
+**Équipe (3 personnes) :**
+- **Abdillahi Darar Rayan** - Module Location & Reporting
+- **Barbu Eric-Dan** - Module Vente (Sale)
+- **AL bakali Roudaina** - Module E-commerce (Website)
+
+**Répartition du travail :**
+
+| Module | Fonctionnalités | Responsable |
+|--------|----------------|-------------|
+| **Location** | Contrats de location, tarification, pénalités de retard, facturation, rapports (taux d'occupation, revenus) | Rayan |
+| **Vente** | Catalogue produits, commandes clients, facturation, gestion des stocks | Eric-Dan |
+| **E-commerce** | Site web, panier d'achat, tunnel de commande, espace client, intégration catalogue | Roudaina |
+
+**Travail collaboratif :**
+- Intégration des trois modules
+- Base de données commune (velo_shop12)
+- Gestion unifiée des clients (res.partner)
+- Tests d'intégration
 
 ## Licence
 
@@ -677,13 +803,30 @@ Pour toute question technique :
 - Consulter la documentation Odoo : https://www.odoo.com/documentation/19.0/
 - Consulter les forums Odoo : https://www.odoo.com/forum
 
+## Captures d'écran
+
+Pour voir des captures d'écran de l'interface du projet, consultez le dossier `screenshots/` (si disponible) ou les démonstrations lors de la présentation.
+
+**Interfaces principales :**
+- Page d'accueil du site e-commerce
+- Catalogue produits avec filtres
+- Panier d'achat et tunnel de commande
+- Interface de gestion des contrats de location
+- Calendrier de disponibilité des vélos
+- Rapports de taux d'occupation
+- Dashboard de gestion des ventes
+
+---
+
 ## Améliorations futures possibles
 
 - Ajout d'un module de gestion de maintenance des vélos
-- Intégration d'un système de réservation en ligne
-- Notifications par email pour les retards
+- Système de réservation en ligne pour les locations
+- Notifications par email pour les retards de location
 - Application mobile pour les clients
 - Gestion des contrats d'assurance
 - Système de fidélité pour les clients réguliers
-- Intégration avec des systèmes de paiement en ligne
+- Intégration avec des systèmes de paiement en ligne (Stripe, PayPal)
 - Géolocalisation des vélos avec GPS
+- Chat en ligne pour le support client
+- Système d'avis et notation des produits
