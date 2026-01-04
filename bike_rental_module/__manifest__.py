@@ -1,18 +1,63 @@
+"""
+Manifeste du module Bike Rental Module
+
+Définit les métadonnées, dépendances et fichiers de données du module.
+
+Ordre d'importance dans 'data' :
+1. security : droits d'accès
+2. views : interfaces utilisateur
+3. reports : templates de rapports PDF
+4. data : données de démo et tâches cron
+
+Note : rental_contract_report.xml doit être chargé avant les vues
+qui l'utilisent pour éviter les erreurs de référence.
+"""
 {
     'name': 'Bike Rental Module',
     'version': '1.0',
     'summary': 'Module pour la gestion de location des vélos',
-    'depends': ['base', 'product', 'contacts', 'sale','website'],
+    'description': """
+        Module complet de gestion de location de vélos pour Odoo 19.0
+
+        Fonctionnalités :
+        - Gestion des contrats de location avec workflow complet
+        - Tarification flexible (horaire ou journalière)
+        - Calcul automatique des pénalités de retard
+        - Vérification de disponibilité des vélos
+        - Génération de factures Odoo
+        - Rapports statistiques (taux d'occupation, revenus)
+        - Vue calendrier pour visualiser la disponibilité
+        - Tâche automatique pour mettre à jour les états
+    """,
+    'author': 'Votre Nom',
+    'category': 'Sales/Rental',
+    'depends': [
+        'base',      # Framework de base Odoo
+        'product',   # Gestion des produits (vélos)
+        'contacts',  # Gestion des clients
+        'sale',      # Module de vente
+        'website',   # Interface web
+        'account',   # Module comptable pour la facturation
+    ],
     'data': [
+        # Sécurité : définition des droits d'accès aux modèles
         'security/ir.model.access.csv',
-        'views/product_views.xml',
-        'views/rental_contract_views.xml',
-        'views/rental_report_views.xml',
-        'views/bike_occupation_views.xml',
-        'reports/rental_contract_report.xml',   # <-- doit être avant views qui l'utilise
-        'data/rental_cron.xml',
+
+        # Vues : interfaces utilisateur
+        'views/product_views.xml',           # Extension des vues produit
+        'views/rental_contract_views.xml',   # Vues principales des contrats
+        'views/rental_report_views.xml',     # Vues des rapports
+        'views/bike_occupation_views.xml',   # Vue du taux d'occupation
+
+        # Rapports PDF
+        'reports/rental_contract_report.xml',   # Template PDF des contrats (doit être avant views)
+
+        # Données et automatisations
+        'data/rental_cron.xml',   # Tâche planifiée pour mise à jour auto des états
     ],
 
     'installable': True,
     'application': True,
+    'auto_install': False,
+    'license': 'LGPL-3',
 }

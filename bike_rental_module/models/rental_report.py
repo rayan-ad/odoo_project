@@ -1,6 +1,29 @@
+"""
+Module de reporting pour les locations de vélos.
+
+Ce module contient deux modèles de reporting basés sur des vues SQL :
+1. RentalReport : Rapport général des locations avec agrégations
+2. BikeOccupationReport : Calcul du taux d'occupation des vélos
+
+Ces vues matérialisées permettent des analyses rapides sans charger
+tous les enregistrements en mémoire.
+"""
+
 from odoo import models, fields, api, tools
 
 class RentalReport(models.Model):
+    """
+    Vue SQL matérialisée pour le reporting des locations.
+
+    Cette vue agrège les données des contrats de location pour permettre
+    des analyses par vélo, client, période, etc.
+
+    Utilise _auto = False car la table est créée via SQL dans init()
+    et non par l'ORM Odoo standard.
+
+    Permet de grouper et filtrer les locations pour obtenir des statistiques
+    comme les revenus totaux, les durées moyennes, les pénalités, etc.
+    """
     _name = 'rental.report'
     _description = 'Rapport de location'
     _auto = False
@@ -37,7 +60,21 @@ class RentalReport(models.Model):
     days_rented = fields.Float(string='Jours loués', readonly=True, group_operator='sum')
 
     def init(self):
-        """Vue SQL pour les statistiques de location"""
+        """
+        Initialise la vue SQL matérialisée pour le rapport de location.
+
+        Cette méthode est appelée automatiquement lors de l'installation
+        ou la mise à jour du module.
+
+        La vue SQL :
+        - Sélectionne tous les contrats non annulés
+        - Extrait les informations clés (vélo, client, dates, montants)
+        - Ajoute des champs calculés (mois, année, jours loués)
+        - Permet le groupement et l'agrégation dans les vues Odoo
+
+        La clause CASE pour days_rented ne compte que les locations
+        confirmées, en cours ou terminées (pas les brouillons).
+        """
         query = """
             CREATE OR REPLACE VIEW rental_report AS (
                 SELECT
@@ -69,7 +106,23 @@ class RentalReport(models.Model):
 
 
 class BikeOccupationReport(models.Model):
-    """Rapport spécifique pour le taux d'occupation des vélos"""
+    """
+    Rapport du taux d'occupation des vélos sur les 365 derniers jours.
+
+    Ce modèle calcule pour chaque vélo :
+    - Le nombre total de jours loués
+    - Le nombre de locations
+    - Le revenu total généré
+    - Le taux d'occupation en pourcentage
+
+    Le taux d'occupation est calculé comme :
+    (jours loués / 365 jours) × 100
+
+    Utile pour identifier :
+    - Les vélos les plus/moins rentables
+    - Les vélos sous-utilisés
+    - Les opportunités d'optimisation du parc
+    """
     _name = 'bike.occupation.report'
     _description = 'Taux d\'occupation des vélos'
     _auto = False
@@ -84,8 +137,22 @@ class BikeOccupationReport(models.Model):
 
     def init(self):
         """
-        Vue SQL calculant le taux d'occupation par vélo
-        Période = 365 jours (dernière année)
+        Initialise la vue SQL pour le calcul du taux d'occupation.
+
+        Logique de calcul :
+        1. Part de tous les vélos de la catégorie "Velos"
+        2. Pour chaque vélo, agrège les contrats des 365 derniers jours
+        3. Calcule :
+           - Somme des jours loués (duration_days)
+           - Nombre de locations
+           - Revenus totaux (total_amount)
+           - Taux d'occupation = (jours loués / 365) × 100
+
+        Utilise LEFT JOIN pour inclure les vélos jamais loués (avec valeurs à 0).
+        Utilise COALESCE pour gérer les valeurs NULL.
+        Filtre uniquement les contrats confirmés, en cours ou terminés.
+
+        La période de 365 jours est fixe et calculée depuis CURRENT_DATE.
         """
         query = """
             CREATE OR REPLACE VIEW bike_occupation_report AS (

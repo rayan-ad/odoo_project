@@ -1,7 +1,27 @@
+"""
+Module de gestion des contrats de location de vélos.
+
+Ce module permet de créer et gérer des contrats de location avec :
+- Calcul automatique de la durée et du prix
+- Gestion des pénalités de retard
+- Vérification de disponibilité des vélos
+- Génération de factures Odoo
+- Workflow complet de location (brouillon -> confirmé -> en cours -> terminé)
+"""
+
 from odoo import models, fields, api
 from odoo.exceptions import ValidationError, UserError
 
 class RentalContract(models.Model):
+    """
+    Modèle principal pour la gestion des contrats de location de vélos.
+
+    Gère l'ensemble du cycle de vie d'une location :
+    - Réservation et vérification de disponibilité
+    - Calcul automatique des durées et prix
+    - Détection et facturation des retards
+    - Génération de factures clients
+    """
     _name = 'rental.contract'
     _description = 'Contrat de location de vélo'
     _order = 'start_date desc'
@@ -103,6 +123,13 @@ class RentalContract(models.Model):
         help="Prix location + pénalités de retard"
     )
 
+    invoice_id = fields.Many2one(
+        'account.move',
+        string="Facture",
+        readonly=True,
+        copy=False,
+        help="Facture Odoo générée pour ce contrat de location"
+    )
 
     state = fields.Selection(
         [
@@ -117,12 +144,23 @@ class RentalContract(models.Model):
     )
 
 
-    #=====================
-    # Respect des contrat
-    #=====================
+    # ====================================
+    # CALCUL DES RETARDS ET PENALITES
+    # ====================================
 
     @api.depends('state', 'end_date', 'actual_return_date')
     def _compute_late(self):
+        """
+        Calcule si le contrat est en retard et le nombre d'heures de retard.
+
+        Logique :
+        - Pour les contrats "en cours" : compare la date actuelle avec la date de fin prévue
+        - Pour les contrats "terminés" : compare la date de retour réelle avec la date de fin prévue
+        - Calcule le nombre d'heures de retard pour la facturation des pénalités
+
+        Le retard est calculé uniquement pour les contrats confirmés ou terminés,
+        pas pour les brouillons ou annulés.
+        """
         now = fields.Datetime.now()
         for rec in self:
             rec.is_late = False
@@ -144,6 +182,17 @@ class RentalContract(models.Model):
     # ===============================
     @api.constrains('start_date', 'end_date')
     def _check_dates(self):
+        """
+        Valide la cohérence des dates de début et de fin du contrat.
+
+        Règles de validation :
+        1. La date de fin doit être strictement après la date de début
+        2. La date de début ne peut pas être dans le passé
+
+        Lève une ValidationError si les règles ne sont pas respectées.
+        Cette méthode est appelée automatiquement à chaque modification
+        des champs start_date ou end_date.
+        """
         for rec in self:
             if rec.start_date and rec.end_date:
                 if rec.start_date >= rec.end_date:
@@ -160,6 +209,16 @@ class RentalContract(models.Model):
     # =========================
     @api.depends('start_date', 'end_date')
     def _compute_duration(self):
+        """
+        Calcule automatiquement la durée de location en heures et en jours.
+
+        Le calcul se base sur la différence entre la date de fin et la date de début.
+        Les deux durées sont stockées pour permettre une facturation flexible :
+        - duration_hours : utilisée pour la facturation horaire
+        - duration_days : utilisée pour la facturation journalière
+
+        Ce calcul est déclenché automatiquement à chaque modification des dates.
+        """
         for rec in self:
             rec.duration_hours = 0
             rec.duration_days = 0
@@ -199,8 +258,20 @@ class RentalContract(models.Model):
     # =========================
     def _check_bike_availability(self):
         """
-        Vérifie qu'il n'existe pas déjà un autre contrat confirmé/en cours
-        pour le même vélo et une période qui se chevauche.
+        Vérifie la disponibilité du vélo pour la période demandée.
+
+        Cette méthode empêche la double réservation en vérifiant qu'aucun autre
+        contrat confirmé ou en cours n'existe pour le même vélo sur une période
+        qui chevauche la période demandée.
+
+        Algorithme de détection de chevauchement :
+        - Un chevauchement existe si :
+          (start_date_existant < end_date_nouveau) ET (end_date_existant > start_date_nouveau)
+
+        Seuls les contrats confirmés et en cours sont vérifiés.
+        Les brouillons et annulés n'affectent pas la disponibilité.
+
+        Lève une ValidationError si le vélo est déjà réservé sur cette période.
         """
         for rec in self:
             if not (rec.bike_id and rec.start_date and rec.end_date):
@@ -219,10 +290,23 @@ class RentalContract(models.Model):
                     f"Le vélo {rec.bike_id.display_name} est déjà loué sur cette période."
                 )
 
-    #Passer automatiquement le statut à "En cours" quand le temps arrive
     @api.model
     def cron_update_contract_states(self):
-        """Met à jour automatiquement l'état des contrats en fonction du temps."""
+        """
+        Tâche planifiée pour mettre à jour automatiquement les états des contrats.
+
+        Cette méthode est exécutée périodiquement (toutes les heures par défaut)
+        via une tâche cron Odoo.
+
+        Actions automatiques :
+        1. Passe les contrats "Confirmés" à "En cours" quand la date de début est atteinte
+        2. Passe les contrats "En cours" à "Terminé" quand la date de fin est dépassée
+
+        Cela évite aux utilisateurs d'avoir à changer manuellement les états
+        et assure une transition fluide du workflow.
+
+        Note : Les dates sont comparées avec l'heure actuelle du serveur.
+        """
         now = fields.Datetime.now()
 
         # 1. Passer en 'ongoing' les contrats confirmés dont la date de début est passée
@@ -272,11 +356,104 @@ class RentalContract(models.Model):
         report = self.env['ir.actions.report'].search([
             ('report_name', '=', 'bike_rental_module.rental_contract_template')
         ], limit=1)
-        
+
         if not report:
             raise UserError("Le rapport n'existe pas. Vérifie que le fichier XML est bien chargé.")
-        
+
         return report.report_action(self)
+
+    def action_create_invoice(self):
+        """
+        Crée une facture client Odoo (account.move) pour ce contrat de location.
+
+        Workflow :
+        1. Vérifie qu'aucune facture n'existe déjà (protection contre duplication)
+        2. Vérifie que le contrat est dans un état facturable (en cours ou terminé)
+        3. Crée une facture avec les informations du contrat
+        4. Ajoute une ligne pour la location du vélo
+        5. Ajoute une ligne pour les pénalités de retard si applicable
+        6. Lie la facture au contrat via le champ invoice_id
+        7. Ouvre automatiquement la facture créée
+
+        Calcul des lignes de facture :
+        - Ligne location : quantité = durée (heures ou jours) × prix unitaire
+        - Ligne pénalité : quantité = jours de retard × prix pénalité par jour
+
+        Returns:
+            dict: Action Odoo pour ouvrir la facture créée dans une vue formulaire
+
+        Raises:
+            UserError: Si une facture existe déjà ou si l'état n'est pas valide
+        """
+        self.ensure_one()
+
+        # Vérifier qu'une facture n'existe pas déjà
+        if self.invoice_id:
+            raise UserError("Une facture a déjà été créée pour ce contrat.")
+
+        # Vérifier que le contrat est dans un état valide
+        if self.state not in ('ongoing', 'done'):
+            raise UserError("Le contrat doit être 'En cours' ou 'Terminé' pour créer une facture.")
+
+        # Créer la facture
+        invoice_vals = {
+            'move_type': 'out_invoice',
+            'partner_id': self.customer_id.id,
+            'invoice_date': fields.Date.today(),
+            'invoice_origin': self.name,
+            'invoice_line_ids': [],
+        }
+
+        # Ligne 1 : Location du vélo
+        # Déterminer la quantité et le prix unitaire selon le mode de facturation
+        if self.billing_unit == 'day':
+            quantity = self.duration_days
+            unit_price = self.unit_price
+            description = f"Location vélo {self.bike_id.name} - {self.duration_days:.2f} jours"
+        else:  # hour
+            quantity = self.duration_hours
+            unit_price = self.unit_price
+            description = f"Location vélo {self.bike_id.name} - {self.duration_hours:.2f} heures"
+
+        # Créer la ligne de location
+        invoice_line_vals = {
+            'product_id': self.bike_id.product_variant_id.id if self.bike_id.product_variant_id else False,
+            'name': description,
+            'quantity': quantity,
+            'price_unit': unit_price,
+        }
+        invoice_vals['invoice_line_ids'].append((0, 0, invoice_line_vals))
+
+        # Ligne 2 : Pénalités de retard (si applicable)
+        if self.is_late and self.late_hours > 0:
+            # Calculer le prix unitaire de la pénalité par jour
+            hourly_rate = self.unit_price if self.billing_unit == 'hour' else self.unit_price / 24
+            late_days = self.late_hours / 24
+            penalty_unit_price = hourly_rate * 24  # Prix par jour de retard
+
+            penalty_line_vals = {
+                'name': f"Pénalité retard - {self.late_hours:.2f} heures ({late_days:.2f} jours)",
+                'quantity': late_days,
+                'price_unit': penalty_unit_price,
+            }
+            invoice_vals['invoice_line_ids'].append((0, 0, penalty_line_vals))
+
+        # Créer la facture
+        invoice = self.env['account.move'].create(invoice_vals)
+
+        # Lier la facture au contrat
+        self.invoice_id = invoice.id
+
+        # Retourner l'action pour ouvrir la facture
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'Facture',
+            'res_model': 'account.move',
+            'res_id': invoice.id,
+            'view_mode': 'form',
+            'view_type': 'form',
+            'target': 'current',
+        }
 
     @api.depends('late_hours', 'unit_price', 'billing_unit')
     def _compute_late_penalty(self):

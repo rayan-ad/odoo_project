@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!--
+        Vues et menus pour la gestion des contrats de location
+
+        Ce fichier définit :
+        - Les vues liste, formulaire et calendrier pour les contrats
+        - Les actions pour ouvrir ces vues
+        - La structure des menus dans l'interface Odoo
+        - Les configurations spécifiques pour la disponibilité et la tarification
+
+        Organisation des menus :
+        Location (menu principal)
+        ├── Contrats de location
+        ├── Disponibilité (vue calendrier)
+        ├── Vélos à louer
+        └── Tarification
+    -->
 
     <!-- =========================
          ACTION + MENUS CONTRATS
@@ -47,19 +63,35 @@
                 <field name="price"/>
                 <field name="is_late"/>
                 <field name="late_hours"/>
+                <field name="invoice_id"/>
             </list>
         </field>
     </record>
 
-    <!-- Vue formulaire (TA VERSION) -->
+    <!-- Vue formulaire des contrats de location
+
+         Fonctionnalités principales :
+         - Header avec boutons d'action (imprimer, facturer, workflow)
+         - Barre de statut affichant l'état du contrat
+         - Sections organisées : infos générales, période, durée, tarification, facturation
+         - Calculs automatiques affichés en lecture seule
+         - Bouton "Créer facture" qui disparaît après création (invisible si invoice_id existe)
+    -->
     <record id="view_rental_contract_form" model="ir.ui.view">
         <field name="name">rental.contract.form</field>
         <field name="model">rental.contract</field>
         <field name="arch" type="xml">
             <form string="Contrat de location">
                 <header>
+                    <!-- Bouton pour imprimer le contrat PDF -->
                     <button name="action_print_contract" string="Imprimer contrat" type="object" class="btn-primary"/>
 
+                    <!-- Bouton pour générer une facture Odoo
+                         Disparaît automatiquement après création (invisible="invoice_id")
+                         Évite la duplication de factures -->
+                    <button name="action_create_invoice" string="Créer facture Odoo" type="object"
+                            class="btn-primary"
+                            invisible="invoice_id"/>
 
                     <button name="action_confirm" type="object" string="Confirmer" class="btn-primary"/>
                     <button name="action_start" type="object" string="Démarrer" class="btn-primary"/>
@@ -100,6 +132,10 @@
                         <field name="price" readonly="1"/>
                     </group>
 
+                    <group string="Facturation" invisible="not invoice_id">
+                        <field name="invoice_id" readonly="1"/>
+                    </group>
+
                     <group string="Notes">
                         <field name="notes"/>
                     </group>
@@ -112,7 +148,18 @@
          DISPONIBILITÉ (CALENDRIER)
          ========================= -->
 
-    <!-- Vue calendrier = disponibilité des vélos -->
+    <!-- Vue calendrier pour visualiser la disponibilité des vélos
+
+         Cette vue affiche les périodes de location dans un calendrier
+         avec une couleur différente par vélo (color="bike_id").
+
+         Permet de :
+         - Voir rapidement quels vélos sont loués et quand
+         - Identifier les créneaux disponibles
+         - Détecter visuellement les périodes de forte demande
+
+         Les événements s'étendent de date_start à date_stop.
+    -->
     <record id="view_rental_contract_calendar" model="ir.ui.view">
         <field name="name">rental.contract.calendar</field>
         <field name="model">rental.contract</field>
