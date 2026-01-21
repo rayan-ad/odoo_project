@@ -784,8 +784,8 @@ Projet réalisé dans le cadre du cours Odoo 2025
 | Module | Fonctionnalités | Responsable |
 |--------|----------------|-------------|
 | **Location** | Contrats de location, tarification, pénalités de retard, facturation, rapports (taux d'occupation, revenus) | Rayan |
-| **Vente** | Catalogue produits, commandes clients, facturation, gestion des stocks | Eric-Dan |
-| **E-commerce** | Site web, panier d'achat, tunnel de commande, espace client, intégration catalogue | Roudaina |
+| **Vente** | Catalogue produits, commandes clients, facturation, gestion des stocks | Roudaina |
+| **E-commerce** | Site web, panier d'achat, tunnel de commande, espace client, intégration catalogue | Eric-Dan |
 
 **Travail collaboratif :**
 - Intégration des trois modules
