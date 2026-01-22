@@ -1,17 +1,3 @@
-"""
-Manifeste du module Bike Rental Module
-
-Définit les métadonnées, dépendances et fichiers de données du module.
-
-Ordre d'importance dans 'data' :
-1. security : droits d'accès
-2. views : interfaces utilisateur
-3. reports : templates de rapports PDF
-4. data : données de démo et tâches cron
-
-Note : rental_contract_report.xml doit être chargé avant les vues
-qui l'utilisent pour éviter les erreurs de référence.
-"""
 {
     'name': 'Bike Rental Module',
     'version': '1.0',
